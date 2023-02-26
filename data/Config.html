@@ -1,0 +1,120 @@
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=auto">
+  <title>IeC 103 - Configuração com JSON & SPIFFS</title>
+  <link href="css" rel="stylesheet">
+</head>
+
+  
+<body class="invert">
+  <h1>IeC 103 - Configuração com JSON & SPIFFS</h1>
+  <h2>
+    <a href="/Home">Home</a> |
+    
+    <br/><h3>Available Pages</h3><hr>
+    <table class='table'>
+    <thead><tr><th>Page</th><th>Function</th></tr></thead><tbody>
+    
+    </table>
+    <p>More information about WiFiManager at <a href='https://github.com/tzapu/WiFiManager'>https://github.com/tzapu/WiFiManager</a>
+  </h2>
+
+  <h3>
+  <form name="config" action="configSave" method="">
+  <table>
+    <tr>
+    <th colspan="2" class="msg">Configuração</th>
+    </tr>
+    <tr>
+    <tr> <th rowspan="2">Wi-Fi</th><td>SSID: <input type="text" name="ssid" value="#ssid#" size="25" maxlength="29"></td> </tr>
+    <tr> <td>Senha: <input type="password" name="pw" size="25" maxlength="29"></td> </tr>
+    <tr><th colspan="2" class="msg"><input id="save" type="submit" value="Gravar" onClick="return confirm('Gravar a configuração?')"></th></tr>
+
+  </table>
+  
+  </form>
+  
+  <div class='wrap'>
+    <h2>/</h2><hR>
+    <form action='/wifi' method='get'><button>Configure WiFi</button></form>
+    <Hr><br/>
+  </div>
+
+    <h2>/wifi</h2><hr>
+    <div><a href='#p' onclick='c(this)'>Acccess Point 01</a><div role='img' aria-label='88%' title='88%' class='q q-4 l'></div></div>
+    <div><a href='#p' onclick='c(this)'>Acccess Point 02</a><div role='img' aria-label='88%' title='88%' class='q q-4'></div></div>
+    <div><a href='#p' onclick='c(this)'>Acccess Point 03</a><div role='img' aria-label='60%' title='60%' class='q q-3 l'></div></div>
+    <div><a href='#p' onclick='c(this)'>Acccess Point 04</a><div role='img' aria-label='60%' title='60%' class='q q-3'></div></div>
+    <div><a href='#p' onclick='c(this)'>Acccess Point 05</a><div role='img' aria-label='60%' title='60%' class='q q-3'></div></div>
+    <div><a href='#p' onclick='c(this)'>Acccess Point 06</a><div role='img' aria-label='40%' title='40%' class='q q-2'></div></div>
+    <div><a href='#p' onclick='c(this)'>Acccess Point 07</a><div role='img' aria-label='40%' title='40%' class='q q-2 l'></div></div>
+    <div><a href='#p' onclick='c(this)'>Acccess Point 08</a><div role='img' aria-label='20%' title='20%' class='q q-1'></div></div>
+    <div><a href='#p' onclick='c(this)'>Acccess Point 09</a><div role='img' aria-label='20%' title='20%' class='q q-1'></div></div>
+    <div><a href='#p' onclick='c(this)'>Acccess Point 10</a><div role='img' aria-label='20%' title='20%' class='q q-4 l'></div><div class='q '>100%</div></div>
+    <div><a href='#p' onclick='c(this)'>Acccess Point 11</a><div role='img' aria-label='10%' title='10%' class='q q-3'></div><div class='q '>70%</div></div>
+    <div><a href='#p' onclick='c(this)'>Acccess Point 12</a><div role='img' aria-label='10%' title='10%' class='q q-1 l'></div><div class='q '>10%</div></div>
+    <div><a href='#p' onclick='c(this)'>Acccess Point 13</a><div role='img' aria-label='10%' title='10%' class='q q-0 h'></div><div class='q '>100%</div></div>
+    <div><a href='#p' onclick='c(this)'>Acccess Point 14</a><div class='q'>66%</div></div>
+    <div><a href='#p' onclick='c(this)'>Acccess Point 15</a><div class='q'>56%</div></div>
+    
+    <div><a href='#p' onclick='c(this)'>{v}</a><div role='img' aria-label='{r}%' title='{r}%' class='q q-{q} {i}'></div></div>
+    
+    <form method='get' action='wifisave'><label for='s'>SSID</label><br/><input id='s' name='s' length=32 placeholder='SSID'><br/><label for='p'>Password</label><input id='p' name='p' length=64 type='password' placeholder='password'><br/>
+  
+    <h3>custom parameter</h3><hr>
+    <br/><label for='custom'>Label for Custom Param</label>
+    <br/><input id='custom' name='custom' length='255' placeholder='placeholder' value='' {c}>
+    
+    <br/><label for='{i}'>{p}</label>
+  
+    <br/><input id='{i}' name='{n}' length='{l}' placeholder='{p}' value='{v}' {c}>
+   
+    <br/><form action='/wifi' method='get'><button>Refresh</button></form>
+    
+    <div class='msg P'><strong>Connected</strong> to {v}<br/><em><small>with IP {i}</small></em></div>
+    
+    <div class='msg {c}'><strong>Not Connected</strong> to {v}{r}</div>
+    
+    <div class='msg D'><strong>Not Connected</strong> to apname
+   
+      <br/>Authentication Failure
+      <br>AP not found
+      <br>Could not Connect
+    
+    </div>
+   
+    <div class='msg'>No AP set</div>
+    <div class='msg P'><h4>H4 Color Header P</h4>content</div>
+    <div class='msg S'><h4>H4 Color Header S</h4>content</div>
+  
+    <Br/><br/>Form UPLOAD<br/>
+    <form method='POST' action='u' enctype='multipart/form-data'>
+      <input type='file' name='update' accept='.bin,application/octet-stream' onchange="(function(el){document.getElementById('uploadbin').style.display = el.value=='' ? 'none' : 'initial';})(this)">
+      <button id='uploadbin' class="h">Submit</button>
+    </form>
+    <a href='http://192.168.4.1' target='_blank'><small>* Upload may not function inside captive portal, Open in browser - http://192.168.4.1</a></small>
+   
+    <br/><br/><br/><hr>
+    <br/><label for='custom'>Label for Custom Param</label>
+    <br/><input id='custom' name='custom' length='255' placeholder='placeholder' value='' {c}>
+    <br/><input style='display: inline-block;' type='radio' id='choice1' name='program_selection' value='1'>
+      <label for='choice1'>Choice1</label><br>
+      <input style='display: inline-block;' type='radio' id='choice2' name='program_selection' value='2'>
+      <label for='choice2'>Choice2</label><br>
+
+  </div>
+
+
+</body>
+
+<script>
+  function c(l){document.getElementById('s').value=l.innerText||l.textContent;
+  p = l.nextElementSibling.classList.contains('l');
+  document.getElementById('p').disabled = !p;
+  if(p)document.getElementById('p').focus()};
+
+</script>
+
+  
+</html>
