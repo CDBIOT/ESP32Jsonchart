@@ -1,252 +1,65 @@
-<!DOCTYPE html>  
-<html>
-<title>Grafico</title>
-<meta charset="UTF-8" />
-<head> 
+  
+ <html>
+<head>
+<meta charset="UTF-8">	
+<meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'/> 
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<title>Monitor</title>
 <link href="css" rel="stylesheet">
 </head>
+<body onload="refreshCAN()">
+ 
+ <script type='text/javascript'>
+	function refreshCAN()
+	{
+	var xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+	if (xmlhttp.readyState == XMLHttpRequest.DONE && xmlhttp.status == 200){
+	var myObj = JSON.parse(this.responseText);
+	//document.getElementById('ID  ').innerText = 'CAN: ' + myObj.device +'' ;
+	document.getElementById('CAN0').innerHTML = + myObj.data[0] +'' ;
+	document.getElementById('CAN1').innerHTML = + myObj.data[1] +'' ;
+	document.getElementById('CAN2').innerHTML = '' + myObj.data[2] +'' ;
+	document.getElementById('CAN3').innerHTML = '' + myObj.data[3] +'' ;
+	document.getElementById('CAN4').innerHTML = '' + myObj.data[4] +'' ;
+	document.getElementById('CAN5').innerHTML = '' + myObj.data[5] +'' ; 
+	document.getElementById('CAN6').innerHTML = '' + myObj.data[6] +'' ;
+	document.getElementById('CAN7').innerHTML = '' + myObj.data[7] +'' ; 
+	console.log(CAN0);
+	console.log(CAN1);
+		
+		}
+	  };
+	  xmlhttp.open('GET', "CAN",true);
+	  xmlhttp.send();
+	}
+	 </script>
 
-<body>
-  <h2>
-    <a href="/Home">Home</a> |
-  <h3>
-    <table>
-    
-    <tr><th>TEMP </th>
-      <td><h2 id ='temperature'></h2></td><td>
-        <td><h2 id ='timeStamp'></h2></td><td>
-    </tr>
-    </table>
-  </h3>
 
-  <h1>Monitor</h1>
-  <p id='temperature'>Temperature: </p>
-  <p id='humidity'>Humidity: </p>
-  <p id='sensor'>Sensor: </p>
-    
-  <table>
-  <tr >
-  <td >Nome</td>
-  <td >Temperatura</td>
-  <td >Umidade</td>
-  <td >Hora</td>
-  <td ><p id = 'hora'></p></td>
-  </tr>
-  <tr>
-  <td> Motor</td>
-  <td><p id = 'Temp' ></p></td>
-  <td> <p id = 'humidity'></p> </td>
-<tr><th>TEMP </th><td > <button type=button onClick=refreshTemperature()>LER</button></td>  <td><h2 id ='temperature '></h2></td><td><h2 id ='temperature'></h2>
-
+<h1>Monitor</h1>
+<h2>
+<a href="/">Home</a> |
+</h2>
+<h3>
+<table>
+<tr><th>Id   <td><h2 c0 ></h2></td> </th></tr>
+<tr><th>TEMP </th><td><button type="button" onClick="refreshCAN()">LER</button></td>
+	<td><h2 id ='CAN  '></h2></td><td><h2 id ='CAN0'></h2></td><td><h2 id ='CAN1'></h2></td><td><h2 id ='CAN2'></h2></td>
+	<td><h2 id ='CAN3 '></h2></td><td><h2 id ='CAN4'></h2></td><td><h2 id ='CAN5'></h2></td><td><h2 id ='CAN6'></h2></td></tr>
+<tr><th>FUEL </th><td><button type="button" onClick="refreshCAN()">LER</button></td>
+	<td><h2 id ='CAN  '></h2></td><td><h2 id ='CAN0'></h2></td><td><h2 id ='CAN1'></h2></td><td><h2 id ='CAN2'></h2></td>
+	<td><h2 id ='CAN3 '></h2></td><td><h2 id ='CAN4'></h2></td><td><h2 id ='CAN5'></h2></td><td><h2 id ='CAN6'></h2></td></tr>
+<tr><th>TRIP </th><td><button type="button" onClick="refreshCAN()">LER</button></td>
+	<td><h2 id ='CAN  '></h2></td><td><h2 id ='CAN0'></h2></td><td><h2 id ='CAN1'></h2></td><td><h2 id ='CAN2'></h2></td>
+	<td><h2 id ='CAN3 '></h2></td><td><h2 id ='CAN4'></h2></td><td><h2 id ='CAN5'></h2></td><td><h2 id ='CAN6'></h2></td></tr>
+<tr><th>PEDAL</th><td><button type="button" onClick="refreshCAN()">LER</button></td>
+	<td><h2 id ='CAN  '></h2></td><td><h2 id ='CAN0'></h2></td><td><h2 id ='CAN1'></h2></td><td><h2 id ='CAN2'></h2></td>
+	<td><h2 id ='CAN3 '></h2></td><td><h2 id ='CAN4'></h2></td><td><h2 id ='CAN5'></h2></td><td><h2 id ='CAN6'></h2></td></tr>
+<tr><th>SPEED</th><td><button type="button" onClick="refreshCAN()">LER</button></td>
+	<td><h2 id ='CAN  '></h2></td><td><h2 id ='CAN0'></h2></td><td><h2 id ='CAN1'></h2></td><td><h2 id ='CAN2'></h2></td>
+	<td><h2 id ='CAN3 '></h2></td><td><h2 id ='CAN4'></h2></td><td><h2 id ='CAN5'></h2></td><td><h2 id ='CAN6'></h2></td></tr>
 </table>
-
-
-  </body>
-<script>
-  
-  function PWM_on()
-  {
-   // counter ++;
-    
-   var xmlhttp = new XMLHttpRequest();
-    xmlhttp.onreadystatechange = function() {
-      if (xmlhttp.readyState == XMLHttpRequest.DONE && xmlhttp.status == 200){
-
-      var myObj = JSON.parse(this.responseText);	
-      document.getElementById('pwm').innerHTML= myObj.pwm_value + '';
-    
-    }
-    };
-    xmlhttp.open('GET', "/pwm_on", true);
-    xmlhttp.send();
-    }
-
-    
-  function PWM_off()
-  {
-   // counter ++;
-    
-   var xmlhttp = new XMLHttpRequest();
-    xmlhttp.onreadystatechange = function() {
-      if (xmlhttp.readyState == XMLHttpRequest.DONE && xmlhttp.status == 200){
-
-      var myObj = JSON.parse(this.responseText);	
-      document.getElementById('pwm').innerHTML= myObj.pwm_value + '';
-    
-    }
-    };
-    xmlhttp.open('GET', "/pwm_off", true);
-    xmlhttp.send();
-    }
-  
-
-function drawChart() {
-
-  // Define the chart to be drawn.
-var jsonData = $.ajax({
-       url: "/temperature",
-       dataType: "json",
-       async: false}).responseText;
-       //success: function (jsonData) ;
-      
-const logtemp = ["0","1","2","3","4","5","6","7","8","9"];
-
-console.log(logtemp);
-
-for(let i = 0; i<logtemp.length; i = i+1)
-{
-console.log(logtemp[i])
-
-}
-
-  var data = google.visualization.arrayToDataTable(jsonData);
-
-      ['Hora', 'Temp']
-
-         for (var i = 0; i < jsonData.length; i++) {
-           var row = [jsonData[i].Hora, jsonData[i].Temp];
-           data.push(row);
-         }
-         
-
- var data = google.visualization.arrayToDataTable([
-      ['Hora', 'Temp'],
-      ['01',  0],
-      ['02',  1],
-      ['03',  2],
-      ['04',  4],
-  
-     false,])//'false' means that the first row contains labels, not data.
-  }  
-  
-
-//instanciando e desenhando o grafico linhas
-var data = new google.visualization.DataTable(jsonData);
-var linhas = new google.visualization.LineChart(document.getElementById('linhas'));
-
-linhas.draw(data);
-
-</script>
-<div id='linhas' style='width:1020px; height:500px'></div>
-       
-<script type='text/javascript'>
-var values = [];
-var timeStamp = [];
-
-//On Page load show graphs
-  window.onload = function() {
-	console.log(new Date().toLocaleTimeString());
-	//showGraph(5,10,4,58);
-};
-
-setInterval(function() {
-  getData();
-}, 5000); //5000mSeconds update rate
-
-
-    function getData()
-    {
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.onreadystatechange = function() {
-    if (xmlhttp.readyState == XMLHttpRequest.DONE && xmlhttp.status == 200){
-      
-     //Push the data in array
-
-      var time = new Date().toLocaleTimeString();
-      var myObj = JSON.parse(this.responseText);
-       
-    document.getElementById('temperature').innerHTML= myObj.temperature + 'C';
-      
-      values.push(myObj);
-      timeStamp.push(time);
-     // showGraph();	//Update Graphs
-	//Update Data Table
-	  var table = document.getElementById("dataTable");
-	  var row = table.insertRow(1);	//Add after headings
-	  var cell1 = row.insertCell(0);
-	  var cell2 = row.insertCell(1);
-	  cell1.innerHTML = time;
-	  cell2.innerHTML = LOG0;
-      
-      }
-    };
-    xmlhttp.open('GET', "/temperature",true);
-    xmlhttp.send();
-    }
-   
-
-    function refreshTemperature()
-    {
-     // counter ++;
-      
-     var xmlhttp = new XMLHttpRequest();
-      xmlhttp.onreadystatechange = function() {
-        if (xmlhttp.readyState == XMLHttpRequest.DONE && xmlhttp.status == 200){
-
-        var myObj = JSON.parse(this.responseText);	
-        document.getElementById('temperature').innerHTML= myObj.temperature + 'C';
-      
-      }
-      };
-      xmlhttp.open('GET', "/temperature", true);
-      xmlhttp.send();
-      }
-    </script>
-    <script type='text/javascript'>
-      refresh();
-      setInterval(refresh, 5000);
-      function refresh()
-      {
-        refreshTemperature();
-        refreshHumidity();
-        refreshStatusPin();
-        startTime();
-      }
-      
-      function refreshTemperature()
-      {
-       var xmlhttp = new XMLHttpRequest();
-        xmlhttp.onreadystatechange = function() {
-          if (xmlhttp.readyState == XMLHttpRequest.DONE && xmlhttp.status == 200){
-           document.getElementById('temperature').innerHTML = 'Temp: ' + JSON.parse(xmlhttp.responseText).Tempo.hora + 'C';
-          }
-        };
-        xmlhttp.open('GET', '/jsonTemp', true);
-        xmlhttp.send();   
-      
-      }
-      </script>
-      
-      <script type=text/javascript>
-      function refreshHumidity()
-      {
-        var xmlhttp = new XMLHttpRequest();
-        xmlhttp.onreadystatechange = function() {
-          if (xmlhttp.readyState == XMLHttpRequest.DONE && xmlhttp.status == 200){
-            document.getElementById('hora').innerHTML = 'Humidity: ' + JSON.parse(xmlhttp.responseText).hora + '%';
-           
-          }
-        };
-        xmlhttp.open('GET', '/log_view', true);
-        xmlhttp.send();
-      }
-    </script>
-    
-    <script type=text/javascript>
-      function refreshStatusPin()
-      {
-        var xmlhttp = new XMLHttpRequest();
-        xmlhttp.onreadystatechange = function() {
-          if (xmlhttp.readyState == XMLHttpRequest.DONE && xmlhttp.status == 200){
-           document.getElementById('sensor').innerHTML = 'Sensor: ' + JSON.parse(xmlhttp.responseText).Tempo.temp + 'ON' ;
-          }
-        };
-        xmlhttp.open('GET', '/jsonTemp', true);
-        xmlhttp.send();
-      }
-     
-    </script>
-  
-    
+</h3>
+</body>
 
 </html>

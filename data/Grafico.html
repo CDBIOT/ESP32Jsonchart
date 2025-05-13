@@ -1,0 +1,109 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+		<link href="css" rel="stylesheet">
+		<meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'/> 
+		<meta http-equiv="X-UA-Compatible" content="ie=edge">
+   
+    <title>ESP Chart JSON</title>
+    
+</head>
+
+<body onload="refreshCAN()">
+
+  <h2>
+  <a href="/">Home</a> |
+  </h2>
+  
+  <script type='text/javascript'>
+    function refreshCAN()
+    {
+    var xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function() {
+    if (xmlhttp.readyState == XMLHttpRequest.DONE && xmlhttp.status == 200){
+    var myObj = JSON.parse(this.responseText);
+    
+    //document.getElementById('ID  ').innerText = 'CAN: ' + myObj.device +'' ;
+    document.getElementById('LOG0').innerHTML = + myObj.data[0] +'' ;
+    document.getElementById('LOG1').innerHTML = + myObj.data[1] +'' ;
+   // document.getElementById('LOG2').innerHTML = + myObj.data[2] +'' ;
+    document.getElementById('LOG3').innerHTML = + myObj.data[3] +'' ;
+    document.getElementById('LOG4').innerHTML = + myObj.data[4] +'' ;
+    document.getElementById('LOG4').innerHTML = + myObj.Hora[0] +'' ;
+    document.getElementById('LOG4').innerHTML = + myObj.Temp[0] +'' ;
+
+    console.log(LOG0);
+    console.log(LOG1);
+    console.log(LOG2);
+    console.log(LOG3);
+    console.log(LOG4);
+      
+      }
+    };
+    xmlhttp.open('GET', "/LOG",true);
+    xmlhttp.send();
+    }
+   </script>
+
+
+<script type='text/javascript' src='https://www.gstatic.com/charts/loader.js'></script>
+   
+<script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+<script type="text/javascript"> google.charts.load("current", {packages:['corechart','line']}); 
+    
+  // Set a callback to run when the Google Visualization API is loaded.
+  google.charts.setOnLoadCallback(drawChart);
+
+     
+function drawChart() {
+
+  // Define the chart to be drawn.
+  var jsonData = $.ajax({
+       url: "/LOG",
+       dataType: "json",
+       async: false}).responseText;
+       //success: function (jsonData) 
+      
+         
+  var data = google.visualization.arrayToDataTable(jsonData);
+
+      ['Hora', 'Temp']
+
+         for (var i = 0; i < jsonData.length; i++) {
+           var row = [jsonData[i].Hora, jsonData[i].Temp];
+           data.push(row);
+         }
+         
+//montando o array com os dados
+ var data = google.visualization.arrayToDataTable([
+      ['Hora', 'Temp'],
+      ['01',  0],
+      ['02',  1],
+      ['03',  2],
+      ['04',  4],
+  
+     false,])//'false' means that the first row contains labels, not data.
+  }  
+  
+//});
+
+//instanciando e desenhando o grafico linhas
+var data = new google.visualization.DataTable(jsonData);
+var linhas = new google.visualization.LineChart(document.getElementById('linhas'));
+
+linhas.draw(data);
+
+</script>
+<div id='linhas' style='width:1020px; height:500px'></div>"
+       
+
+<h3>
+	<table>
+	<tr><th>TEMP </th>
+		<td><h2 id ='LOG0'></h2></td><td><h2 id ='LOG1'></h2></td><td><h2 id ='LOG2'></h2></td>
+		<td><h2 id ='LOG3 '></h2></td><td><h2 id ='LOG4'></h2></td><td><h2 id ='LOG5'></h2></td>
+  </tr>
+	</table>
+</h3>
+</body>
+</html>

@@ -1,5 +1,3 @@
-//const { left } = require("@popperjs/core");
-
 var timer = 0;
 
 function decT() {
@@ -83,6 +81,35 @@ function chkReset() {
   }
 }
 
+function chkSave() {
+  var webPW = document.config.webPW.value;
+  if (webPW != document.config.webPWC.value) {
+    alert("Atenção!\nSenhas de Acesso à Interface são diferentes.");
+    return false;
+  }
+  if (webPW != "" && webPW.length < 6) {
+    alert("Atenção!\nSenha de Acesso à Interface deve possuir pelo menos 6 caracteres.");
+    return false;
+  }
+  cfgPW = document.config.cfgPW.value;
+  if (cfgPW != document.config.cfgPWC.value) {
+    alert("Atenção!\nSenhas de Redefinição da Configuração são diferentes.");
+    return false;
+  }
+  if (cfgPW != "" && cfgPW.length < 10) {
+    alert("Atenção!\nSenha de Redefinição da Configuração deve possuir pelo menos 10 caracteres.");
+    return false;
+  }
+  if (webPW != "" && webPW == cfgPW) {
+    alert("Atenção!\nAs senhas de Acesso à Interface e Redefinição da Configuração devem ser diferentes.");
+    return false;
+  }
+  if (cfgPW != "" && !confirm("*** ATENÇÃO ***\n\nA Senha de Redefinição da Configuração está sendo alterada, registre-a em um lugar seguro.\n\nCaso esta senha seja perdida, o Dispositivo só poderá ser reiniciado na Fábrica.\n\nConfirma a alteração dessa Senha?")) {
+    return false;
+  }
+  return confirm("Gravar a Configuração?");
+}
+
 function menu(m) {
   var s = document.getElementById(m).style;
   if (s.display == "none") {
@@ -91,104 +118,3 @@ function menu(m) {
     s.display = "none";
   }
 }
-   
-function getData()
-{
-var xmlhttp = new XMLHttpRequest();
-xmlhttp.onreadystatechange = function() 
-{
-if (xmlhttp.readyState == XMLHttpRequest.DONE && xmlhttp.status == 200)
-{
-  var myObj = JSON.parse(this.responseText);
-  
- // for (var i = 0; i < 5; i++)
-  {
- var numero1 = document.getElementById('Temp1').innerText= parseInt(myObj.Tempo.Hora);
- var numero2 = document.getElementById('Temp2').innerText= parseInt(myObj.Tempo.Temp);
- //var numero3 = document.getElementById('Temp3').innerText= (myObj.Tempo);
- //var numero4 = document.getElementById('Temp4').innerText= (myObj.Temp);
-  }
-//     values.push(myObj);
-//     timeStamp.push(time);
-//   var row = table.insertRow(1);	//Add after headings
-console.log(myObj);
-console.log(Temp1);
-console.log(Temp2);
-console.log(numero1);
-console.log(numero2);
-
-//var data = new google.visualization.arraytoDataTable//();
-//data.addColumn('number', 'Dia');
-//data.addColumn('number', 'Temp');
-//data.addRows
-//([      ['Hora', 'Temp'],
-  //[Temp1,Temp2],
- // ['Temp1', 'Temp2'],
- // ['Temp1', 'Temp2'],
- // [numero1, numero2],
-  //[numero1, numero2],
-   
- // ]);
-  
-//let hora1 = parseInt(myObj.h1);
-let data = google.visualization.arrayToDataTable(myObj);
-['Tempo', 'Temp']
-   for (var i = 0; i < myObj.length; i++)
-    {
-     let row = [myObj.Tempo.Hora, myObj.Tempo.Temp];
-      // var jsonTemp = document.getElementById('Temp1').innerText= parseInt(myObj);
-      data.push(row);
-    }
-
-// Create our data table out of JSON data loaded from server.
-//var data = new google.visualization.DataTable(jsonData);
-      
-var options  = {
-  'title' : 'TEMP/DIA',
-  'width' : 400,
-  'height': 300
-};
-//instanciando e desenhando o grafico linhas
-var divgraf = new google.visualization.LineChart(document.getElementById('divgraf'));
-divgraf.draw(data,options);
-
-  }
-};
-xmlhttp.open('GET', "/jsonTemp",true);
-xmlhttp.send();
-}
-
-
-function drawChart() {
-    var json = $.ajax({
-        url: "GetFaturamentoMes",
-        dataType: "json",
-        success: function (jsonData) {
-            var data = new google.visualization.DataTable();
-            data.addColumn('number', 'Mês');
-            data.addColumn('number', 'Faturamento Por Mês');
-
-            for (var i = 0; i < jsonData.length; i++) {
-                mes = jsonData[i].Mes;
-                total = jsonData[i].Total;
-                data.addRow([mes, total]);
-            }
-            var options = {
-                chart: {
-                    title: 'Gráfico de Faturamento Mensal',
-                    subtitle: 'Moeda (R$)'
-                },
-                width: 600,
-                height: 300,
-                axes: {
-                    x: {
-                        10: { side: 'top' }
-                    }
-                }
-            };
-            var chart = new google.charts.Line(document.getElementById('line_top_x'));
-            chart.draw(data, google.charts.Line.convertOptions(options));
-        }
-    });
-}
-        

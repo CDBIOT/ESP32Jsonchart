@@ -4,7 +4,9 @@
 <meta charset="UTF-8">	
 <meta name='viewport' content='width=device-width, initial-scale=1, user-scalable=no'/> 
 <title>Monitor</title>
-<link href="css" rel="stylesheet">
+<link href="E:\Documentos\Eletronica\IOT\esp\ESP32\ESP32Jsonchart\data\Style.css" rel="stylesheet" >
+<link href="/Style.css" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="/reset.css" />
 </head>
 <body onload="refreshTemperature()">
  
@@ -18,7 +20,7 @@
         document.getElementById('LOG').innerHTML= myObj.temperature + 'C';
 		}
 	  };
-	  xmlhttp.open('GET', "temperature", true);
+	  xmlhttp.open('GET', "LOG", true);
 	  xmlhttp.send();
 	}
   </script>
