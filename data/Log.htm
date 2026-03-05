@@ -2,97 +2,151 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=auto">
+  
+  <link href="css" rel="stylesheet">
   <title>ESPRelé - Log</title>
-  <style type="text/css">
-    body {
-      font-family: Verdana, Arial, Helvetica, sans-serif;
-      font-size: 12px;
-      color: #ffffff;
-      margin: 5px;
-      background: #d0d0d0;
-      min-width: 400px;
-      max-width: 600px;
-     }
-    h1 {
-      font-size: 20px;
-      text-align: center;
-      color: rgb(60, 153, 234);
-      background: #787878;
-      border-radius: 7px 7px 0px 0px;
-      padding: 7px 4px 0px 4px;
-      margin: 0px;
-    }
-    h2 {
-      font-size: 12px;
-      text-align: left;
-      color: rgb(60, 153, 234);
-      background: #787878;
-      padding: 4px 8px 4px 8px;
-      margin: 0px;
-      border: #787878 solid 2px;
-    }
-    h3 {
-      font-size: 12px;
-      text-align: left;
-      font-weight: normal;
-      background: #ffffff;
-      padding: 7px;
-      margin: 0px;
-      border: #787878 solid 2px;
-      border-radius: 0px 0px 7px 7px;
-    }
-    table {
-      width: 100%;
-    }
-    th {
-      font-size: 11px;
-      background: rgb(60, 153, 234);
-      text-align: right;
-      padding: 5px;
-      border-radius: 3px 0px 0px 3px;
-      width: 25%;
-    }
-    td {
-      font-size: 11px;
-      background: #787878;
-      padding: 5px;
-      border-radius: 0px 3px 3px 0px;
-    }
-    a {
-      font-size: 12px;
-      color: #ffffff;
-    }
-  </style>
 </head>
+<script>
+    function obterLogs() {
+      fetch("/getlog")
+        .then(res => res.text())
+        .then(txt => document.getElementById("logBox").value = txt)
+        .catch(err => alert("Erro: " + err));
+    }
+   
+    function enviarAgendamento() {
+      const cmd = document.getElementById("cmd").value;
+      fetch("/setSchedule?cmd=" + encodeURIComponent(cmd))
+        .then(res => res.text())
+        .then(txt => alert(txt))
+        .catch(err => alert("Erro: " + err));
+    }
+
+ function readFiles() {
+      fetch("/fileList")
+        .then(res => res.text())
+        .then(txt => document.getElementById("logFilesBox").value = txt)
+        .catch(err => alert("Erro: " + err));
+    }
+
+    
+ async function readLog() {
+
+  const file = document.getElementById("fileName").value.trim();
+  if (!file) {
+    alert("Digite o nome do arquivo");
+    return;
+  }
+  
+    const res = await fetch(`?file=${file}`)
+        .then(res => res.text())
+        .then(txt => document.getElementById("logReadBox").value = txt)
+        .catch(err => alert("Erro: " + err));
+
+  }
+
+
+  </script>
+
 <body>
   <h1>ESPRelé - Log</h1>
   <h2>
     <a href="/">Home</a> |
     <a href="relay">Relé</a> |
-    <a href="fileList">Arquivos</a> |
-    <a href="config">Configuração</a> |
-    <a href="reboot" onclick="return confirm('Reiniciar ESPRelé?')">Reiniciar</a> |
-    <a href="log">Log</a>
+    <a href="fileRead">Read Logs</a> 
   </h2>
   <h3>
+
+
   <table>
     <tr>
-      <th rowspan="2">Log em Memória</th>
+      <th rowspan="5">Log em Memória</th>
+
       <td><a href="/logGet">Download</a></td>
+     
     </tr>
-    <tr>
+
+<tr>
+  <td>
+  <h2>Agendar Evento</h2>
+  <form onsubmit="enviarAgendamento(); return false;">
+    <label for="cmd">Comando (ex: DH 14:00): 
+    SH 2018-10-12 16:30  - Ligar em 12/10/2018 16:30
+*   MH 12 16:30          - Ligar mensalmente no dia 12 às 16:30
+*   WL 6 16:30           - Desligar semanalmente nas sextas-feiras às 16:30 
+*   DH 16:30             - Ligar diariamente às 16:30
+*   IH 00:30             - Desligar após estar ligado por 30 minutos
+*   IL 00:10             - Ligar após estar desligado por 10 minutos</label><br>
+
+
+
+    <input type="text" id="cmd" placeholder="SH 2025-07-15 14:00"><br>
+    <button type="submit">Enviar Agendamento</button>
+    
+  </td>
+</tr>
+
+<tr>
+  <td>
+    <textarea id="logBox" readonly rows="10" cols="50"></textarea>
+     <button onclick="obterLogs()">Atualizar Logs</button>
+  </td>
+</tr>
+
+<tr>
+  <td>
+
+  <label>Nome do arquivo:</label>
+
+  <input id="fileName" placeholder="2026-01-14.json">
+  <tr>
+      <td>
+
+    <textarea id="logReadBox" readonly rows="10" cols="50"></textarea>
+     </td>
+   
+    <td>
+    <button onclick="readLog()">Read Logs</button>
+    </td>
+  </tr>
+
+ <tr>
+  <td>
+      <td id="fileName">${fileName}</td>
+      <td>${file}</td>
+      <td>${fileName}</td>
+      <td>${fileName}</td>
+      <td>${fileName}</td>
+  </td>
+</tr>
+
+<tr>
       <td><a href="/logReset" onclick="return confirm('Apagar Log em Memória?')">Apagar</a></td>
     </tr>
     <tr>
       <th rowspan="2">Log em Arquivo</th>
+      <td>
+       <textarea id="logFilesBox" readonly rows="10" cols="50"></textarea>
+        <button onclick="readFiles()">Listar arquivos</button>
+        </td>
+
       <td>#logFiles#</td>
-    </tr>
+</tr>
+
     <tr>
       <td><a href="/logFileReset" onclick="return confirm('Apagar TODOS os Logs em Arquivo?')">Apagar</a></td>
     </tr>
     <tr>
       <th>Espaço</th><td>#fsSpace#</td>
     </tr>
+    
+<td>
+  
+<input type="button" id="btnOn" value="Ligar" onClick="setRelay(1)">
+<input type="button" id="btnOff" value="Desligar" onClick="setRelay(0)">
+<input type="button" id="btndisp" value="Setar" onClick="setdisp()">
+
+</td>
   </table>
   </h3>
 </body>

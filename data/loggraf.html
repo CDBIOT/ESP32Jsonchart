@@ -50,6 +50,45 @@
 <br>
 <br>	
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<table id="tbl"></table>
+<canvas id="chart"></canvas>
+
+<script>
+async function loadLog(file) {
+  const res = await fetch(`/log?file=${file}`);
+  const data = await res.json();
+
+  // TABELA
+  let html = "<tr><th>Hora</th><th>A1</th><th>A2</th></tr>";
+  let labels=[], a1=[], a2=[];
+
+  data.forEach(r => {
+    html += `<tr><td>${r.time}</td><td>${r.a1}</td><td>${r.a2}</td></tr>`;
+    labels.push(r.time);
+    a1.push(r.a1);
+    a2.push(r.a2);
+  });
+  document.getElementById("tbl").innerHTML = html;
+
+  // GRÁFICO
+  new Chart(document.getElementById("chart"), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {label:'Sensor A1', data:a1},
+        {label:'Sensor A2', data:a2}
+      ]
+    }
+  });
+}
+
+loadFiles();
+
+</script>
+
 <script>
 //Graphs visit: https://www.chartjs.org
 var values = [];

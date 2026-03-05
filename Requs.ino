@@ -12,61 +12,26 @@ void handleRelogio();
 void handleCSS();
 void handleloggraf();
 void getTemp();
+void readLog();
+void handleLogOne();
+
 void handleLog_view();
 void handleJavaScript();
-void logDelete();
+void handleFileRead();
+void handleListFiles();
+void deleteLog();
 void reboot();
+void hold();
 
 //variables
-int sensorPin = A0;
+int sensorPin = 34;
 
-// Max log entries
-const byte      LOG_ENTRIES                     = 50;
+// Directory Max Number of Files
+const byte      DIRECTORY_MAX_FILES             = 20;
 
-// System Log
-String            logStr[LOG_ENTRIES];
-byte              logIndex      = 0;
-
-
-// Funções auxiliares -----------------------------------
-String dateTimeStr(time_t t, int8_t tz = 0) {
-  // Formata time_t como "aaaa-mm-dd hh:mm:ss"
-  if (t == 0) {
-    return "N/D";
-  } else {
-    t += tz * 3600;                               // Ajusta fuso horário
-    struct tm *ptm;
-    ptm = gmtime(&t);
-    String s;
-    s = ptm->tm_year + 1900;
-    s += "-";
-    if (ptm->tm_mon < 9) {
-      s += "0";
-    }
-    s += ptm->tm_mon + 1;
-    s += "-";
-    if (ptm->tm_mday < 10) {
-      s += "0";
-    }
-    s += ptm->tm_mday;
-    s += " ";
-    if (ptm->tm_hour < 10) {
-      s += "0";
-    }
-    s += ptm->tm_hour;
-    s += ":";
-    if (ptm->tm_min < 10) {
-      s += "0";
-    }
-    s += ptm->tm_min;
-    s += ":";
-    if (ptm->tm_sec < 10) {
-      s += "0";
-    }
-    s += ptm->tm_sec;
-    return s;
-  }
-}
+extern String s;
+extern int valor;
+extern float t;
 
 // Requisições Web --------------------------------------
 
@@ -82,8 +47,8 @@ void handleHome() {
     // Atualiza conteúdo dinâmico
    // s.replace(F("#led#")  , ledOn ? F("Ligado") : F("Desligado"));
     s.replace(F("#id#")   , id);
-    s.replace(F("#ssid#") , ssid);
-    s.replace(F("#pw#")   , pw);
+  //  s.replace(F("#ssid#") , ssid);
+  //  s.replace(F("#pw#")   , pw);
     s.replace(F("#sysIP#")    , ipStr(WiFi.status() == WL_CONNECTED ? WiFi.localIP() : WiFi.softAPIP()));
     s.replace(F("#clientIP#") , ipStr(server.client().remoteIP()));
     
@@ -105,9 +70,9 @@ void handleConfig() {
     file.close();
     
     // Atualiza conteúdo dinâmico
-   // s.replace(F("#id#")     , id);
-   // s.replace(F("#ledOn#")  ,  ledOn ? " checked" : "");
-   //s.replace(F("#ledOff#") , !ledOn ? " checked" : "");
+    s.replace(F("#id#")     , id);
+    s.replace(F("#ledOn#")  ,  ledOn ? " checked" : "");
+    s.replace(F("#ledOff#") , !ledOn ? " checked" : "");
     s.replace(F("#ssid#")   , ssid);
     s.replace(F("#pw#")   , pw);
     
@@ -151,9 +116,9 @@ void handleConfigSave() {
   // Grava Config
   // ESP32 envia apenas os 4 campos
   if (server.args() == 2) {
-
-    String s;
-//    // Grava id
+//
+//    String s;
+////    // Grava id
 //    s = server.arg("id");
 //    s.trim();
 //    if (s == "") {
@@ -164,20 +129,22 @@ void handleConfigSave() {
     // Grava ssid
     s = server.arg("ssid");
     s.trim();
-   // strlcpy(ssid, s.c_str(), sizeof(ssid));
-
+    strlcpy(ssid, s.c_str(), sizeof(ssid));
+    Serial.print(ssid);
+    
     // Grava pw
     s = server.arg("pw");
     s.trim();
     if (s != "") {
       // Atualiza senha, se informada
-    //  strlcpy(pw, s.c_str(), sizeof(pw));
+      strlcpy(pw, s.c_str(), sizeof(pw));
     }
+    Serial.print(pw);
 
     // Grava ledOn
-  //  ledOn = server.arg("led").toInt()
+    ledOn = server.arg("led").toInt();
     // Atualiza LED
-    //ledSet();
+    ledSet();
     // Grava configuração
     if (configSave()) {
       server.send(200, F("text/html"), F("<html><meta charset='UTF-8'><script>alert('Configuração salva.');history.back()</script></html>"));
@@ -217,13 +184,6 @@ void handleReboot()
     String s = file.readString();
     file.close();
     
-// --- Excluindo arquivo ---
-  Serial.println("\nExcluindo Arquivo ----------------------------");
-  if (SPIFFS.remove("/Log/Log.txt")) {
-    Serial.println("Arquivo '/Log/Log.txt' excluído");
-  } else {
-    Serial.println("Exclusão '/Log/Log.txt' falhou");
-  }
   reboot();
     // Envia dados
     server.send(200, F("text/html"), s);
@@ -261,6 +221,15 @@ void handleRelogio() {
     String s = file.readString();
     file.close();
 
+//    String s;
+////    // Grava id
+//    s = server.arg("id");
+//    s.trim();
+//    if (s == "") {
+//      s = deviceID();
+//   }
+
+     
     // Envia dados
     server.send(200, F("text/html"), s);
 //    log("JS - Cliente: " + ipStr(server.client().remoteIP()));
@@ -271,20 +240,6 @@ void handleRelogio() {
 }
 }
 
-void handleCSS() {
-  // Arquivo CSS
-  File file = SPIFFS.open(F("/Style.css"), "r");
-  if (file) {
-    // Define cache para 3 dias
-    server.sendHeader(F("Cache-Control"), F("public, max-age=172800"));
-    server.streamFile(file, F("text/css"));
-    file.close();
-  //  log("CSS - Cliente: " + ipStr(server.client().remoteIP()));
-  } else {
-    server.send(500, F("text/plain"), F("CSS - ERROR 500"));
- //   log(F("CSS - ERRO lendo arquivo"));
-  }
-}
 
 void handleloggraf()
 { 
@@ -304,111 +259,149 @@ void handleloggraf()
   }
 }
 
-void getTemp()
+
+void handleTemp()
 {
-byte t;
-String json;
-int i;
+File file = SPIFFS.open(F("/Temperatura.html"), "r");
 
-  StaticJsonDocument<JSON_SIZE> doc;
-  JsonObject Dados  = doc.to<JsonObject>();
-  JsonObject Tempo = Dados.createNestedObject("Tempo");
-     for (int i = 0; i < 1; i++){
-    //JsonArray LOG = doc.createNestedArray("data1");
-    //JsonArray Tempo = doc.to<JsonArray>();
-    
-     int valor = analogRead(sensorPin);
-     t = ((valor*250)/1023);
-    Tempo["Hora"] = (dateTimeStr(time(NULL)));
-    Tempo["Temp"] = i;
-   
-    }
-     serializeJson(doc, json);
-    server.send(200, F("text/html"), json);
-//String json = "{\"temperature\":"+String(t)+"}";
-
-}
-
-void handleLog_view() {
-
-byte t;
-String json;
-int i;
-
-  StaticJsonDocument<JSON_SIZE> doc;
-  JsonObject Dados  = doc.to<JsonObject>();
-  JsonObject Tempo = Dados.createNestedObject("Tempo");
-   {
-     int valor = analogRead(sensorPin);
-     t = ((valor*250)/1023);
-    
-    Tempo["Hora"] = (dateTimeStr(time(NULL)));
-    Tempo["Temp"] = t;
-    Tempo["Day"]=(day());
-    Tempo["Month"]=(month());
-    Tempo["Year"]=(year()); 
-    }
-     serializeJson(doc, json);
-
-  File datafile = SPIFFS.open(F("/log_view.txt"),"a"); // Now write data in FS
-  if (datafile) {
-      datafile.setTimeout(100);
-      datafile.println(json);
-      datafile.close();
-  }
-     datafile = SPIFFS.open(F("/log_view.txt"),"r"); // Now read data from FS
-  if (datafile) {
-     String json = datafile.readString();
-     datafile.close();
-     
-      Serial.print(json);
-     server.send(200, F("text/html"), json);
-  }
-}
-
-
-void handleJavaScript() {
-  File file = SPIFFS.open(F("/js.js"), "r");
-  if (file) {
+ if (file) {
     file.setTimeout(100);
     String s = file.readString();
     file.close();
- //handleStream(F("js.js"), F("application/javascript"));
- server.send(200, F("text/html"), s);
-}
+    
+    int valor = analogRead(34);
+     t = ((valor*250)/1023);
+
+  float temperatura = (valor * 250.0) / 1023.0;
+
+  File file = SPIFFS.open("/Log/log.txt", FILE_APPEND);
+  if (file) {
+    file.printf("%s;%.2f\n", dateTimeStr(now()).c_str(), temperatura);
+    file.close();
+    Serial.printf("Logado: %s; %.2f\n", dateTimeStr(now()).c_str(), temperatura);
+  } else {
+    Serial.println("Erro ao abrir Log/log.txt");
+  }
+ 
+      Serial.print(s);
+    // server.send(200, F("text/html"), s);
+  }
+
+byte t;
+String json;
+int i;
+
+  StaticJsonDocument<JSON_SIZE> doc;
+  JsonObject Dados  = doc.to<JsonObject>();
+  
+     serializeJson(doc, json);
+     
+    server.send(200, F("text/html"), json);
+//String json = "{\"temperature\":"+String(t)+"}";
+  //server.send(200, "text/json", "{\"result\":\"ok\"}");
+
 }
 
-void handleLogGet() {
-  // Download do Log
- // ledWrite(LED_HIGH);
-  //if (chkWebAuth()) {
-    byte bFn;
-    String s = deviceID() +
-               F(" - Log\r\nData/Hora;Tipo;Mensagem\r\n");
-    for (bFn = logIndex; bFn < LOG_ENTRIES; bFn++) {
-      if (logStr[bFn] != "") {
-        s += logStr[bFn] + F("\r\n");
- //     }
+void handleListFiles() {
+  File root = SPIFFS.open("/");
+  File file = root.openNextFile();
+
+  String json = "[";
+
+  while (file) {
+    if (!file.isDirectory()) {
+      json += "{";
+      json += "\"name\":\"" + String(file.name()) + "\",";
+      json += "\"size\":" + String(file.size());
+      json += "},";
     }
-    for (bFn = 0; bFn < logIndex; bFn++) {
-      if (logStr[bFn] != "") {
-        s += logStr[bFn] + F("\r\n");
-      }
-    }
-    server.sendHeader(F("Content-Disposition"), "filename=\"" +
-                      deviceID() + F("Log.csv\""));
-    server.send(200, F("text/csv"), s);
-//    log(F("WebLogGet"), "Client: " + ipStr(server.client().remoteIP()));
+    file = root.openNextFile();
   }
-  //ledWrite(LED_LOW);
+
+  if (json.endsWith(",")) json.remove(json.length()-1);
+  json += "]";
+
+  server.send(200, "application/json", json);
 }
+
+
+void handleFileRead() {
+
+  if (!server.hasArg("file")) {
+    server.send(400, "text/plain", "Arquivo não informado");
+    return;
+  }
+  // File read
+  
+  String fileName = server.arg("file");
+  
+  Serial.printf("Nome: %s \n", fileName);
+  
+    File file = SPIFFS.open(fileName, "r");
+    if (file) {
+      file.setTimeout(100);
+      String  s = file.readString();
+      file.close();
+      
+ 
+  // --- Lendo arquivo ---
+  Serial.println("\nLendo Arquivo ----------------------------");
+  //file = SPIFFS.open("log.txt", "r");
+  file = SPIFFS.open(fileName, "r");
+  if (file) {
+    Serial.printf("Nome: %s - %u bytes\n", file.name(), file.size());
+    while (file.available()){
+      Serial.println(file.readStringUntil('\n'));
+    }
+    file.close();
+  }
+
+  
+      server.send(200, "text/plain", s);
+     // log("WebFileList", "Cliente: " + ipStr(server.client().remoteIP()));
+    } else {
+      server.send(500, "text/plain", "FileList - ERROR 500");
+      //log("WebFileList", "ERRO lendo arquivo", ERR_WEB_FILELIST_FILEOPEN);
+    }
+  
+}
+
+
+void handleLogView() {
+  
+File file = SPIFFS.open(F("/log.htm"), "r");
+
+ if (file) {
+    file.setTimeout(100);
+    String s = file.readString();
+    file.close();
+     
+      //Serial.print(s);
+   server.send(200, F("text/html"), s);
+  }
+}
+
+void handleLogOne(){
+  String fileName = server.arg("file");
+  File f = SPIFFS.open(fileName, "r");
+
+  if (!f) {
+    server.send(404,"text/plain","Not found");
+    return;
+  }
+
+  server.streamFile(f, "application/json");
+  f.close();
+}
+
+
 
 void handleLogReset() {
   // Reinicia Log
   //ledWrite(LED_HIGH);
   //if (chkWebAuth()) {
     // Deleta log
-    logDelete();
+    //logDelete();
     // Envia dados
     server.send(200, F("text/html"), F("<html><meta charset='UTF-8'><script>alert('Log reiniciado.');window.location = 'log';</script></html>"));
   //  log(F("WebLogReset"), "Cliente: " + ipStr(server.client().remoteIP()));
@@ -417,12 +410,20 @@ void handleLogReset() {
 }
 
 
-void logDelete() {
+void deleteLog() {
   // Deleta log em memória
   for (byte bFn = 0; bFn < LOG_ENTRIES; bFn++) {
-    logStr[bFn] = "";
+  //  logStr[bFn] = "";
   }
   logIndex = 0;
+  
+// --- Excluindo arquivo ---
+  Serial.println("\nExcluindo Arquivo ----------------------------");
+  if (SPIFFS.remove("/log.txt")) {
+    Serial.println("Arquivo '/log.txt' excluído");
+  } else {
+    Serial.println("Exclusão '/log.txt' falhou");
+  }
 }
 
 //
@@ -438,6 +439,72 @@ void logDelete() {
 void reboot() {
   // Reinicia o dispositivo
  // ledWrite(led0);
-  hold(2000);
+  delay(2000);
   ESP.restart();
+}
+
+
+void handleJavaScript() {
+  File file = SPIFFS.open(F("/js.js"), "r");
+  if (file) {
+    file.setTimeout(100);
+    String s = file.readString();
+    file.close();
+ //handleStream(F("js.js"), F("application/javascript"));
+ server.send(200, F("text/html"), s);
+}
+}
+
+void handleCSS() {
+  // Arquivo CSS
+  File file = SPIFFS.open(F("/Style.css"), "r");
+  if (file) {
+    // Define cache para 3 dias
+    server.sendHeader(F("Cache-Control"), F("public, max-age=172800"));
+    server.streamFile(file, F("text/css"));
+    file.close();
+  //  log("CSS - Cliente: " + ipStr(server.client().remoteIP()));
+  } else {
+    server.send(500, F("text/plain"), F("CSS - ERROR 500"));
+ //   log(F("CSS - ERRO lendo arquivo"));
+  }
+}
+
+void sortArray(String a[], String &s) {
+  // Sort a String Array
+  boolean flFn = true;
+  String sFn;
+  while (flFn) {
+    flFn = false;
+    byte bFn = 0;
+    while(a[bFn + 1] != "") {
+      if(a[bFn] > a[bFn + 1]) {
+        sFn = a[bFn + 1];
+        a[bFn + 1] = a[bFn];
+        a[bFn] = sFn;
+        flFn = true;
+      }
+      bFn++;
+    }
+    bFn = 0;
+    s = "";
+    while (a[bFn] != "") {
+      s += a[bFn];
+      bFn++;
+    }
+  }
+}
+
+String fsSpaceStr() {
+  // Return information about FileSystem space
+  size_t total = SPIFFS.totalBytes();
+  size_t used = SPIFFS.usedBytes();
+  size_t freeSpace = total - used;
+  
+  return  "Total: " +
+            String((total) / 1048576.0, 2) + "mb<br>" +
+          "Usado: " +
+            String(used / 1048576.0, 2) + "mb<br>" +
+          "Disponível: " +
+            String((freeSpace) / 1048576.0, 2) + "mb<br>";
 }
