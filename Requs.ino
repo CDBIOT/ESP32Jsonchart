@@ -7,18 +7,20 @@ void handleConfig();
 void handleConfigSave();
 void handleReconfig();
 void handleReboot();
+
 void handleMonitor();
 void handleRelogio();
 void handleCSS();
 void handleloggraf();
 void getTemp();
 void readLog();
-void handleLogOne();
+void sendLogMQTT();
 
 void handleLog_view();
 void handleJavaScript();
 void handleFileRead();
 void handleListFiles();
+void testRead();
 void deleteLog();
 void reboot();
 void hold();
@@ -31,7 +33,7 @@ const byte      DIRECTORY_MAX_FILES             = 20;
 
 extern String s;
 extern int valor;
-extern float t;
+//extern float t;
 
 // Requisições Web --------------------------------------
 
@@ -47,17 +49,19 @@ void handleHome() {
     // Atualiza conteúdo dinâmico
    // s.replace(F("#led#")  , ledOn ? F("Ligado") : F("Desligado"));
     s.replace(F("#id#")   , id);
-  //  s.replace(F("#ssid#") , ssid);
-  //  s.replace(F("#pw#")   , pw);
+    s.replace(F("#ssid#") , ssid);
+    s.replace(F("#pw#")   , pw);
+     s.replace(F("#serial#") , hexStr(ESP.getEfuseMac()));
+    //s.replace(F("#software#") , softwareStr());
     s.replace(F("#sysIP#")    , ipStr(WiFi.status() == WL_CONNECTED ? WiFi.localIP() : WiFi.softAPIP()));
     s.replace(F("#clientIP#") , ipStr(server.client().remoteIP()));
     
     // Envia dados
     server.send(200, F("text/html"), s);
-  //  log("Home - Cliente: " + ipStr(server.client().remoteIP()) + (server.uri() != "/" ? " [" + server.uri() + "]" : ""));
+    log("Home - Cliente: " + ipStr(server.client().remoteIP()) + (server.uri() != "/" ? " [" + server.uri() + "]" : ""));
   } else {
     server.send(500, F("text/plain"), F("Home - ERROR 500"));
-  //  log(F("Home - ERRO lendo arquivo"));
+    log(F("Home - ERRO lendo arquivo"));
   }
 }
 
@@ -76,32 +80,34 @@ void handleConfig() {
     s.replace(F("#ssid#")   , ssid);
     s.replace(F("#pw#")   , pw);
     
-     Serial.println("scan start");
+//     Serial.println("scan start");
+//
+//    // WiFi.scanNetworks will return the number of networks found
+//    int n = WiFi.scanNetworks();
+//    Serial.println("scan done");
+//    if (n == 0) {
+//        Serial.println("no networks found");
+//    } else {
+//        Serial.print(n);
+//        Serial.println(" networks found");
+//        for (int i = 0; i < n; ++i) {
+//            // Print SSID and RSSI for each network found
+//            Serial.print(i + 1);
+//            Serial.print(": ");
+//            Serial.print(WiFi.SSID(i));
+//            Serial.print(" (");
+//            Serial.print(WiFi.RSSI(i));
+//            Serial.print(")");
+//            Serial.println((WiFi.encryptionType(i) == WIFI_AUTH_OPEN)?" ":"*");
+//            delay(10);
+//        }
+//    }
+//    Serial.println("");
+//
+//    // Wait a bit before scanning again
+//    delay(5000);
 
-    // WiFi.scanNetworks will return the number of networks found
-    int n = WiFi.scanNetworks();
-    Serial.println("scan done");
-    if (n == 0) {
-        Serial.println("no networks found");
-    } else {
-        Serial.print(n);
-        Serial.println(" networks found");
-        for (int i = 0; i < n; ++i) {
-            // Print SSID and RSSI for each network found
-            Serial.print(i + 1);
-            Serial.print(": ");
-            Serial.print(WiFi.SSID(i));
-            Serial.print(" (");
-            Serial.print(WiFi.RSSI(i));
-            Serial.print(")");
-            Serial.println((WiFi.encryptionType(i) == WIFI_AUTH_OPEN)?" ":"*");
-            delay(10);
-        }
-    }
-    Serial.println("");
-
-    // Wait a bit before scanning again
-    delay(5000);
+    
     // Envia dados
     server.send(200, F("text/html"), s);
     log("Configura - Cliente: "  + ipStr(server.client().remoteIP()));
@@ -113,18 +119,19 @@ void handleConfig() {
 }
 
 void handleConfigSave() {
+ 
   // Grava Config
   // ESP32 envia apenas os 4 campos
-  if (server.args() == 2) {
-//
-//    String s;
-////    // Grava id
-//    s = server.arg("id");
-//    s.trim();
-//    if (s == "") {
-//      s = deviceID();
-//   }
-//   strlcpy(id, s.c_str(), sizeof(id));
+  if (server.args() == 4) {
+
+    String s;
+    // Grava id
+    s = server.arg("id");
+    s.trim();
+    if (s == "") {
+      s = deviceID();
+   }
+   strlcpy(id, s.c_str(), sizeof(id));
 
     // Grava ssid
     s = server.arg("ssid");
@@ -145,16 +152,20 @@ void handleConfigSave() {
     ledOn = server.arg("led").toInt();
     // Atualiza LED
     ledSet();
+    
+configSave();
+
     // Grava configuração
     if (configSave()) {
       server.send(200, F("text/html"), F("<html><meta charset='UTF-8'><script>alert('Configuração salva.');history.back()</script></html>"));
-//      log("ConfigSave - Cliente: " + ipStr(server.client().remoteIP()));
+      log("ConfigSave - Cliente: " + ipStr(server.client().remoteIP()));
     } else {
      server.send(200, F("text/html"), F("<html><meta charset='UTF-8'><script>alert('Falha salvando configuração.');history.back()</script></html>"));
-     // log(F("ConfigSave - ERRO salvando Config"));
+      log(F("ConfigSave - ERRO salvando Config"));
     }
   } else {
     server.send(200, F("text/html"), F("<html><meta charset='UTF-8'><script>alert('Erro de parâmetros.');history.back()</script></html>"));
+  log(F("ConfigSave - ERRO de parametros"));
   }
 }
 
@@ -163,7 +174,7 @@ void handleReconfig() {
   configReset();
 
   // Atualiza LED
- // ledSet();
+  ledSet();
 
   // Grava configuração
   if (configSave()) {
@@ -270,7 +281,7 @@ File file = SPIFFS.open(F("/Temperatura.html"), "r");
     file.close();
     
     int valor = analogRead(34);
-     t = ((valor*250)/1023);
+    float t = ((valor*250)/1023);
 
   float temperatura = (valor * 250.0) / 1023.0;
 
@@ -287,20 +298,19 @@ File file = SPIFFS.open(F("/Temperatura.html"), "r");
     // server.send(200, F("text/html"), s);
   }
 
-byte t;
 String json;
 int i;
 
   StaticJsonDocument<JSON_SIZE> doc;
   JsonObject Dados  = doc.to<JsonObject>();
   
-     serializeJson(doc, json);
+  serializeJson(doc, json);
      
-    server.send(200, F("text/html"), json);
+    server.send(200, F("application/json"), json);
 //String json = "{\"temperature\":"+String(t)+"}";
-  //server.send(200, "text/json", "{\"result\":\"ok\"}");
 
 }
+
 
 void handleListFiles() {
   File root = SPIFFS.open("/");
@@ -324,46 +334,121 @@ void handleListFiles() {
   server.send(200, "application/json", json);
 }
 
+void  testRead(){
+  File file = SPIFFS.open("/1969-12-31.txt", FILE_READ);
+  if(!file){
+    Serial.println("ERRO abrindo arquivo");
+    return;
+  }
+  Serial.println("Conteudo:");
+  while(file.available()){
+    Serial.write(file.read());
+  }
+  file.close();
+
+  String arquivo = file.readString();
+  server.send(200, "application/json",arquivo );
+  
+//  File arquivo = SPIFFS.open("/1969-12-31.txt","r");
+//
+//  while(arquivo.available()){
+//    Serial.write(arquivo.read());
+//  }
+//  arquivo.close();
+  
+  //server.send(200, "application/json", arquivo);
+
+
+  
+}
+
 
 void handleFileRead() {
+  
+  StaticJsonDocument<JSON_SIZE> doc;
+  JsonObject arquivo  = doc.to<JsonObject>();
 
   if (!server.hasArg("file")) {
     server.send(400, "text/plain", "Arquivo não informado");
+    Serial.printf("Erro arquivo não informado");
     return;
   }
-  // File read
   
+//  
+//  File arquivo = SPIFFS.open("/1969-12-31.txt","r");
+//
+//  while(arquivo.available()){
+//    Serial.write(arquivo.read());
+//  }
+//  arquivo.close();
+  
+  //server.send(200, "application/json", arquivo);
+
   String fileName = server.arg("file");
+  //Serial.printf("Arquivo: %s tamanho: %d bytes\n", file.name(), file.size());
+
+  if(!fileName.startsWith("/")){
+    fileName = "/" + fileName;
+  }
   
-  Serial.printf("Nome: %s \n", fileName);
+  Serial.printf("Abrindo arquivo: %s \n", fileName);
   
-    File file = SPIFFS.open(fileName, "r");
-    if (file) {
-      file.setTimeout(100);
-      String  s = file.readString();
-      file.close();
-      
- 
-  // --- Lendo arquivo ---
-  Serial.println("\nLendo Arquivo ----------------------------");
-  //file = SPIFFS.open("log.txt", "r");
-  file = SPIFFS.open(fileName, "r");
-  if (file) {
-    Serial.printf("Nome: %s - %u bytes\n", file.name(), file.size());
-    while (file.available()){
-      Serial.println(file.readStringUntil('\n'));
-    }
-    file.close();
+  
+  File file = SPIFFS.open(fileName + ".txt", FILE_READ);
+  if (!file) {
+    Serial.println("Erro abrindo arquivo");
+    server.send(500, "text/plain", "Erro abrindo arquivo");
+    return;
   }
 
-  
-      server.send(200, "text/plain", s);
-     // log("WebFileList", "Cliente: " + ipStr(server.client().remoteIP()));
-    } else {
-      server.send(500, "text/plain", "FileList - ERROR 500");
-      //log("WebFileList", "ERRO lendo arquivo", ERR_WEB_FILELIST_FILEOPEN);
-    }
-  
+
+    
+  //String json  = "[";
+  String content = file.readString();
+//  
+//  bool first = true;
+//  
+//while (file.available()) {
+//
+//    String line = file.readStringUntil('\n');
+//    line.trim();
+//    
+//    Serial.println(line);
+//    if (line.length() == 0) continue;
+//
+//    if (!first) json += ",";
+//    json += line;
+//    first = false;
+//  }
+//  
+ // json += "]";
+   file.println();
+   file.close();
+  //Serial.println(content);
+  //serializeJson(arquivo, json);
+
+ // server.send(200, "application/json", json);
+   
+//  String content = "";
+//
+//  while(file.available()){
+//    char c = file.read();
+//    content += c;
+//  }
+
+  //File f = SPIFFS.open(fileName, "r");
+//
+//  if (!f) {
+//    server.send(404,"text/plain","Not found");
+//    return;
+//  }
+String json = "["  + content + "]";
+   Serial.println(json);
+   json.replace("}\n{","},{");
+    //server.send(200, "text/plain",content);
+    server.send(200, "text/plain",json);
+  //server.streamFile(json, "application/json");
+      
 }
 
 
@@ -379,19 +464,6 @@ File file = SPIFFS.open(F("/log.htm"), "r");
       //Serial.print(s);
    server.send(200, F("text/html"), s);
   }
-}
-
-void handleLogOne(){
-  String fileName = server.arg("file");
-  File f = SPIFFS.open(fileName, "r");
-
-  if (!f) {
-    server.send(404,"text/plain","Not found");
-    return;
-  }
-
-  server.streamFile(f, "application/json");
-  f.close();
 }
 
 

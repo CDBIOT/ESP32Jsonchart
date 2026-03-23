@@ -40,7 +40,9 @@ void handleTemp();
 void handleLogView();
 void handleFileRead();
 void handleListFiles();
-void handleLogOne();
+void handleFileDown();
+void testRead();
+void sendLogMqtt();
 
 void handleJavaScript();
 void handleCSS();
@@ -62,7 +64,6 @@ extern String scheduleChk(const String &sch) ;
 String schedule;
 String s;
 
-float t;
 
 // Max log entries
 extern const byte      LOG_ENTRIES                     = 50;
@@ -82,7 +83,6 @@ int8_t        cTimeZone;
 
 extern int8_t   cTimeZone;
 
-const char* mqtt_server = "broker.mqtt-dashboard.com";
 const char* ap_ssid = "CDB_ESP";
 const char* ap_pass = "12345";
 
@@ -108,7 +108,7 @@ WiFiManager wifiManager;
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-//const char* mqtt_server = "broker.mqtt-dashboard.com";
+const char* mqtt_server = "broker.mqtt-dashboard.com";
          
 // Variáveis Globais ------------------------------------
 
@@ -136,15 +136,9 @@ char msgString[128];                        // Array to store serial string
 
 #define LEDPIN    2     // LED pin
 
-//Mapeamento de pinos do NodeMCU
-#define led0    16
-#define led1    5
-#define led2    4
-#define led3    0
-
-
 #define A1_PIN 33
 #define A2_PIN 32
+
 // Mapeamento de pinos
 const byte        BUTTON_PIN                      = 0;
 const byte        RELAY_PIN                       = 21;
@@ -184,7 +178,6 @@ void ledWrite(const byte &state) {
 }
 
 
-
 //
 //void log(const String &type, const String &msg) {
 //  // Generate log in memory
@@ -205,6 +198,32 @@ void ledWrite(const byte &state) {
 //    return "atualização pendente";
 //  }
 //}
+
+void reconnect() {
+  
+  // Loop until we're reconnected
+  //while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    
+    String clientId = "cdbiot123";
+    clientId += String(random(0xffff), HEX);
+    
+    // Attempt to connect
+    if (client.connect(clientId.c_str())) {
+      Serial.println("connected to mqtt");
+      
+    } else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+
+  //}
+}
+
+
 
 // Callback de sincronização
 #ifdef ESP8266
@@ -250,9 +269,9 @@ void ledSet() {
 
 void  configReset() {
   // Define configuração padrão
- // strlcpy(id, "IeC Device", sizeof(id)); 
-//  strlcpy(ssid, "CDB-2.4G", sizeof(ssid)); 
-//  strlcpy(pw, "abcde12345", sizeof(pw)); 
+  strlcpy(id, "IeC Device", sizeof(id)); 
+  strlcpy(ssid, "CDB-2.4G", sizeof(ssid)); 
+  strlcpy(pw, "abcde12345", sizeof(pw)); 
   ledOn     = false;
   bootCount = 0;
 }
@@ -265,7 +284,7 @@ boolean configRead() {
   if (deserializeJson(jsonConfig, file)) {
     // Falha na leitura, assume valores padrão
     
-  configReset();
+  //configReset();
 
     log(F("Falha lendo CONFIG, assumindo valores padrão."));
     return false;
@@ -324,6 +343,12 @@ void setScheduler(){
     if (scheduleSet(cmd)) {
       scheduleIntervalReset(); 
         Serial.println(cmd);
+
+
+    serializeJsonPretty(json_agenda, file);
+    file.close();
+        
+        
       server.send(200, "text/plain", "Agendamento salvo: " + cmd);
     } else {
       server.send(500, "text/plain", "Erro ao salvar agendamento.");
@@ -356,7 +381,7 @@ String getTodayFile() {
   struct tm *t = localtime(&now);
 
   char name[32];
-  sprintf(name, "/Log/%04d-%02d-%02d.txt",
+  sprintf(name, "/%04d-%02d-%02d.txt",
           t->tm_year + 1900,
           t->tm_mon + 1,
           t->tm_mday);
@@ -365,119 +390,172 @@ String getTodayFile() {
 
 void getLog()
 {
+ 
 String fileName = getTodayFile();
 
-  StaticJsonDocument<JSON_SIZE> dados;
-  
-  StaticJsonDocument<JSON_SIZE> datas;
+  StaticJsonDocument<JSON_SIZE> doc;
   
 byte tdata[10];// = {0x44,0x44,0x55,0x55,0x55,0x55,0x55,0x55};
 
    // static byte pids[] = {PID_RPM,PID_SPEED,PID_COOLANT_TEMP ,PID_FUEL_PRESSURE,PID_INTAKE_MAP,
-     //                     PID_THROTTLE , PID_FUEL_LEVEL ,PID_BAROMETRIC , PID_CONTROL_MODULE_VOLTAGE , PID_AMBIENT_TEMP};
-   // static byte index = 0;
-   // byte pid = pids[index];
+    //                     PID_THROTTLE , PID_FUEL_LEVEL ,PID_BAROMETRIC , PID_CONTROL_MODULE_VOLTAGE , PID_AMBIENT_TEMP};
+    // static byte index = 0;
+    //byte pid = pids[index];
+    //index = (index +1) % sizeof(pids);
 
-byte t;
-byte p;
 String json;
 int i;
-  
-  //JsonObject Dados  = doc.to<JsonObject>();
+const int offset =41;
+const int fullScale = 962;
+
+  JsonObject dados  = doc.to<JsonObject>();
   //JsonObject Tempo = Dados.createNestedObject("Temp");
-     for (int i = 0; i < 1; i++){
   //JsonArray Pressure = Dados.createNestedArray("Pressure");
     //JsonArray Tempo = doc.to<JsonArray>();
-    
+  
      int valor1 = analogRead(A1_PIN);
      float t = (valor1 *(3.3 / 4095.0));
      float temp = t * 100.0;
      
      int valor2 = analogRead(A2_PIN);
-     float p = (valor2 * (3.3 / 4095.0));
-      float pres = p;
+     float p = ((valor2 - offset)- 7.25189 * (3.3 / 4095.0));
+     float pres = p;
 
      dados["hora"] = dateTimeStr(time(NULL));
      dados["temp"] = temp;
-     dados["press"] = pres;
-    //Tempo["Hora"] = (dateTimeStr(time(NULL)));
-    //Temperature["Temp"] = t;
-    //Pressure["Press"] = p;
-   
-    }
-     serializeJson(dados, json);
+     dados["pres"] = pres;
 
-//    for (int i = 0; i<10; i++)
-//    {
-//    int valor = analogRead(33);
-//    t = ((valor*250)/1023);
-//    tdata[i]=t;
-//    }
-  //index = (index +1) % sizeof(pids);
-  
-
-  //for (int k = 0; k<10; k++)
-  {
-   // int valor = analogRead(33);
-   // t = ((valor*250)/1023);
-  //  file.println (t);
-   // file.printf("temp %u\r\n",t);
-  }
-
-    //JsonArray data1 = doc.createNestedArray("Hora");
-    //JsonArray data2 = doc.createNestedArray("Temp");
-    for (int j = 0; j<10; j++){
-   // data1.add(j);
-   // data2.add(hexStr(tdata[j]));
-     }
-//   JsonArray data2 = LOG.createNestedArray("Temp");
-//    
-//    for (int k = 0; k<10; k++){
-//    int valor = analogRead(34);
-//     float t = ((valor*250)/1023);
-//    tdata[k]=t;
-//    data2.add(hexStr(tdata[k]));
- //   }   
-        
-//    serializeJson(LOG, json);
-//    Serial.println(json);
-
-//json = "{\"LOG\":"+String(t)+"}";//Cria um json com os dados da temperatura
-
-
-  //float temperatura = (valor * 250.0) / 1023.0;
 
   File file = SPIFFS.open(fileName, FILE_APPEND);
   if (file) {
-    file.println(json);
+    //file.println(dados);
+    
+    serializeJson(dados, file);
+    file.println();
     file.close();
     
     Serial.printf("Log Salvo");
+    serializeJson(dados,json);
+    Serial.println(json);
+
+    server.send(200,"application/json", json);
   } else {
     Serial.println("Erro ao abrir fileName");
   }
-
-//String json = "{\"temperature\":"+String(t)+"}";//Cria um json com os dados da temperatura
-
-    server.send(200, F("application/json"), json);
-    Serial.println(json);
 }
 
-void sendLogMQTT(const char* filename) {
-  File f = SPIFFS.open(filename, "r");
-  if (!f) return;
 
-  while (f.available()) {
-    String chunk = f.readStringUntil('\n');
-    client.publish("esp/logs", chunk.c_str(), false);
+void handleFileDown(){
+  // File Log download
+  //if (chkWebAuth()) {
+   String s = server.arg("file");
+    
+  if(!s.startsWith("/")){
+    s = "/" + s;
+  }
+  
+  Serial.printf("Abrindo arquivo: %s \n", s);
+  
+    if (s != "") {
+      File file = SPIFFS.open(s + F(".txt"), "r");
+      if (file) {
+        server.sendHeader("Content-Disposition","attachment; filename=\"" +
+                          deviceID() + "LogDia" + s + ".txt\"");
+        server.streamFile(file, "text/plain");
+        file.close();
+        //log("WebLogFileGet", "Client: " + ipStr(server.client().remoteIP()));
+      } else {
+        server.send(500, "text/plain", "LogFileGet - ERROR 500");
+       // log("WebLogFileGet", "ERRO lendo arquivo");
+      }
+    } else {
+      server.send(500, "text/plain", "LogFileGet - ERROR Bad parameter 500");
+      //log("WebLogFileGet", "ERRO parametro incorreto");
+    }
+  //}
+}
+
+void sendLogMqtt() {
+ 
+  if (!server.hasArg("file")) {
+    server.send(400, "text/plain", "Arquivo não enviado pelo get");
+    Serial.printf("Erro arquivo não informado");
+    return;
+  }
+  
+ String filename = server.arg("file");
+ 
+  if(!filename.startsWith("/")){
+    filename = "/" + filename;
+  }
+  if (!filename.endsWith(".txt")) {
+  filename += ".txt";
+}
+  if (!client.connected()) {
+  Serial.println("MQTT caiu durante envio!");
+  //break;
+}
+client.loop(); // mantém conexão viva
+// reconnect();
+ 
+  if (!client.connected()) {
+  Serial.println("MQTT não conectado");
+  server.send(500, "text/plain", "MQTT não conectado");
+  return;
+}
+  File f = SPIFFS.open(filename,"r");
+  if (!f){
+    server.send(400, "text/plain", "Arquivo informado não aberto");
+    return;
   }
 
+  const int MAX_BATCH_SIZE = 200;
+  String batch = "";
+
+  while (f.available()) {
+    //String chunk = f.readStringUntil('\n');
+    String line = f.readStringUntil('\n');
+    // +1 por causa do \n
+    if (batch.length() + line.length() + 1 > MAX_BATCH_SIZE) {
+
+      if (client.publish("esp/logs", batch.c_str())) {
+     // if (client.publish("esp/logs", chunk.c_str())) {
+    Serial.println("Log enviado com sucesso!");
+    } else {
+    Serial.println("Erro ao enviar log MQTT");
+    }
+
+      batch = ""; // limpa buffer
+      delay(50);  // evita travar WiFi/MQTT
+      yield();
+    }
+
+    batch += line + "\n";
+  }
+  
+  // envia resto
+  if (batch.length() > 0) {
+    client.publish("esp/logs", batch.c_str());
+  }
+  
+
   f.close();
+  Serial.printf("Enviando batch (%d bytes)\n", batch.length());
+  Serial.println(batch);
+      client.publish("room_light", "0");
+      //client.publish("esp/logs", "conectado");
+      Serial.println("publish to topic"); 
+      //client.publish("esp/logs", "100");
+    
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+  server.send(200, "text/plain", "File sended via mqtt:" + filename);
+   Serial.println("File sended"); 
 }
+
 
 void sendDailyLog(String date) {
 
-  String fileName = "/Log/log_" + date + ".json";
+  String fileName = "/" + date + ".txt";
 
   File file = SPIFFS.open(fileName, "r");
   if (!file) {
@@ -533,19 +611,7 @@ void setup(){
     while (true);
   }
     
-  pinMode(led0, OUTPUT);
-  pinMode(led1, OUTPUT);
-  pinMode(led2, OUTPUT);
-  pinMode(led3, OUTPUT);
 
-  digitalWrite(led0, HIGH);
-  digitalWrite(led1, HIGH);
-  digitalWrite(led2, HIGH);
-  digitalWrite(led3, HIGH);
-
-  client.setServer(mqtt_server, 1883);
-  //client.setCallback(callback);
-  
   configRead();
   configSave();
    
@@ -584,6 +650,16 @@ Serial.println();
 log("WiFi connected (" + String(WiFi.RSSI()) + ") IP " + ipStr(WiFi.localIP()));
 
 
+  client.setServer(mqtt_server, 1883);
+  //client.setCallback(callback);
+
+  
+  //if (!client.connected()) {
+ reconnect();
+ /// }
+ // client.loop();
+
+ 
 Serial.println("Informações");
 Serial.printf("totalBytes: %u\n usedBytes: %u\n freeBytes: %u\n",
   SPIFFS.totalBytes(),
@@ -613,10 +689,13 @@ server.on("/Temperatura", handleTemp);
 server.on("/graphic", handleloggraf);  
 server.on("/fileList", handleListFiles); 
 server.on("/fileRead", handleFileRead); 
-server.on("/logReadOne", handleLogOne);
+server.on("/fileDown",handleFileDown);
+server.on("/sendLogMqtt",sendLogMqtt);
+server.on("/testRead",testRead);
 
 server.on("/log/deleteLog", deleteLog); 
 server.on("/log", handleLogView); 
+
 server.on("/Monitor",handleMonitor);
 server.on("/Relogio", handleRelogio);
 
@@ -698,24 +777,18 @@ void loop()
  server.handleClient(); 
  
 time_t nowTime = now();
-String clientId = "cdbiot123"/
+String clientId = "cdbiot123";
 
-  if (!client.connected()) {
-  client.connect(clientId);
-  }
-  client.loop();
-  if(client.connected(clientId.c_str()){
-    
-    client.publish("esp/dailylog",jsonPayload.c_str());
-    
-  }
-  
-  
-  
-if (hora == 0 && minuto == 5) {
-   sendDailyLog(dataOntem);
-}
-
+//
+//
+//if (hora == 0 && minuto == 5) {
+//   sendDailyLog(dataOntem);
+//}
+//
+ // if (!client.connected()) {
+ //reconnect();
+ // }
+ // client.loop();
 
 
   // checa agenda a cada 5s
@@ -724,7 +797,7 @@ if (hora == 0 && minuto == 5) {
 
     
  //  📌 LOG A CADA 10m
-  if (nowTime - lastLog >= 360) {
+  if (nowTime - lastLog >= 600) {
     lastLog = nowTime;
     getLog();
   }
